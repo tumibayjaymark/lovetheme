@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Love Envelope with Audio, Video & Photos</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: #fff0f3;
+      font-family: 'Segoe UI', cursive;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      transition: opacity 0.8s ease;
+      overflow: hidden;
+      color: #c8374b;
+    }
+
+    .envelope-container {
+      width: 30vmin;
+      max-width: 200px;
+      cursor: pointer;
+      animation: beat 1.5s ease-in-out infinite;
+      z-index: 2;
+    }
+    @keyframes beat {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    .label {
+      margin-top: 1rem;
+      font-size: 1.2rem;
+      color: #c8374b;
+      z-index: 2;
+      text-align: center;
+      user-select: none;
+    }
+
+    .fade-out {
+      animation: fadeOut 0.8s forwards ease;
+    }
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+    }
+
+    .hearts-fall {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .heart {
+      position: absolute;
+      width: 20px; height: 18px;
+      fill: #e63946;
+      opacity: 0;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      0% { transform: translateY(-30px); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(100vh); opacity: 0; }
+    }
+
+    .page {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: #fff0f3;
+      color: #c8374b;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 3;
+      text-align: center;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+    .page.show {
+      display: flex;
+      animation: fadeIn 1s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(1.05); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .message-wrapper, .audio-container, .video-container, .photos-container {
+      background: #fff6f9;
+      border-radius: 25px;
+      box-shadow: 0 10px 40px rgba(200, 55, 75, 0.15);
+      padding: 2rem;
+      max-width: 90vw;
+      width: 100%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeIn 1.5s ease;
+      position: relative;
+      text-align: center;
+      overflow-y: auto;
+    }
+
+    .heart-header {
+      font-family: 'Brush Script MT', cursive;
+      font-size: 2.2rem;
+      color: #c8374b;
+      margin-bottom: 1rem;
+      animation: pulse 2s infinite ease-in-out;
+      user-select: none;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+      100% { transform: scale(1); }
+    }
+
+    .message-scroll {
+      overflow-y: auto;
+      padding-right: 0.5rem;
+      max-height: 60vh;
+      text-align: left;
+      font-size: 1.2rem;
+      color: #6b0f1a;
+      font-family: 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      width: 100%;
+      user-select: text;
+    }
+
+    .btn {
+      background: #c8374b;
+      border: none;
+      color: #fff4f4;
+      font-size: 1rem;
+      padding: 0.6rem 1.4rem;
+      border-radius: 30px;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      font-family: 'Segoe UI', cursive;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 4px 15px rgba(200, 55, 75, 0.3);
+      user-select: none;
+      min-width: 90px;
+      margin-left: 0.5rem;
+      margin-right: 0.5rem;
+    }
+    .btn:hover:not(:disabled) {
+      background: #a12c3e;
+      box-shadow: 0 6px 20px rgba(200, 55, 75, 0.5);
+    }
+    .btn:disabled {
+      background: #e6a2ab;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 1.5rem;
+      width: 100%;
+    }
+
+    .audio-quote {
+      font-style: italic;
+      margin-bottom: 1.5rem;
+      color: #a82f45;
+      font-size: 1.3rem;
+      user-select: none;
+    }
+
+    audio {
+      outline: none;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(200, 55, 75, 0.3);
+      max-width: 100%;
+      user-select: none;
+    }
+
+    video {
+      border-radius: 20px;
+      max-width: 100%;
+      box-shadow: 0 8px 25px rgba(200, 55, 75, 0.3);
+      user-select: none;
+    }
+
+    /* Photos grid styles */
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      width: 100%;
+      max-width: 480px;
+    }
+    .photos-grid img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(200, 55, 75, 0.3);
+      user-select: none;
+    }
+
+    @media (max-width: 480px) {
+      .message-wrapper, .audio-container, .video-container, .photos-container {
+        padding: 1.2rem;
+      }
+      .heart-header {
+        font-size: 1.6rem;
+      }
+      .message-scroll {
+        font-size: 1rem;
+      }
+      .btn {
+        font-size: 0.9rem;
+        padding: 0.5rem 1.2rem;
+        min-width: 70px;
+      }
+      .audio-quote {
+        font-size: 1.1rem;
+      }
+      .photos-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Envelope -->
+<div class="envelope-container" id="envelope" aria-label="Envelope, click to open message" role="button" tabindex="0">
+  <svg viewBox="0 0 64 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    <rect x="4" y="10" width="56" height="32" rx="6" ry="6" fill="#c8374b"/>
+    <line x1="4" y1="10" x2="32" y2="34" stroke="#fff4f4" stroke-width="1"/>
+    <line x1="60" y1="10" x2="32" y2="34" stroke="#fff4f4" stroke-width="1"/>
+  </svg>
+</div>
+<div class="label"><i>Click the envelope</i></div>
+
+<!-- Background Music -->
+
+  <!--
+    Place your background music file named "music.mp3" in the same folder as this HTML file.
+    You can change the filename/path in the <source> tag below if needed.
+  -->
+  <audio id="bgMusic" src="jxx/cutmusic.mp3" autoplay loop></audio>
+ 
+</audio>
+
+<!-- Falling hearts container -->
+<div class="hearts-fall" id="hearts" aria-hidden="true"></div>
+
+<!-- Page 1: Message Page -->
+<!-- Page 1: Message Page -->
+<div class="page" id="messagePage" role="main" aria-label="Love message page">
+  <div class="message-wrapper">
+    <div class="heart-header">❤️ Sweet Love Message ❤️</div>
+    <div class="message-scroll" tabindex="0">
+      
+     <p>My dearest love,</p>
+
+        Every moment we share together is a precious treasure that fills my heart with joy beyond words. From the first glance to the last whisper of the night, your presence lights up my soul like the brightest star in the sky. I cherish every laugh, every tear, and every heartbeat we experience side by side. You are the melody to my song, the color to my world, and the reason I wake up with a smile each day.
+      </p>
+      <p>
+        As seasons change and time flows on, my love for you grows deeper and stronger. You inspire me to be the best version of myself and to embrace every day with hope and gratitude. No distance or challenge can dim the flame that burns within me for you. Together, we weave a story of love that is timeless and true.
+      </p>
+      <p>
+        I promise to stand by you through all of life's adventures, to support you in your dreams, and to hold your hand through every storm. You are my partner, my confidant, and my forever love. May our journey be filled with endless happiness, laughter, and unforgettable memories.
+      </p>
+      <p>
+        There is a magic in your smile that brightens even the darkest days. Your laughter is the sweetest melody, a sound I never tire of hearing. In your eyes, I see the future I always dreamed of—a life filled with peace, love, and unwavering companionship. Each day spent with you is a gift I never take for granted.
+      </p>
+      <p>
+        I remember the little moments—the way you brush your hair from your face, the soft touch of your hand in mine, the warmth of your embrace when words are not enough. These simple, beautiful memories are stitched into the fabric of my soul, reminders of a love so genuine and pure.
+      </p>
+      <p>
+        We may not know what tomorrow holds, but I know that as long as I have you by my side, everything will be okay. Your love gives me courage, strength, and an unshakable sense of peace. It is in your arms that I find my home, my refuge, and my forever.
+      </p>
+      <p>
+        So here I am, writing these words with a heart full of love and gratitude. Thank you for being you—for loving me, for believing in us, and for making each day brighter just by being in it. I look forward to growing old with you, to a life rich with shared dreams and whispered “I love yous.”
+      </p>
+      <p>
+        With all my heart, always and forever.
+      </p>
+      <p>
+        Yours truly,
+      </p>
+      <p>
+        - Jose P. Rizal
+      </p>
+    </div>
+ 
+
+    <div class="btn-container">
+      <button class="btn" id="backFromMessage" aria-label="Back to envelope">Back</button>
+      <button class="btn" id="nextToAudio" aria-label="Next to audio player page">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- Page 2: Audio Player Page -->
+<div class="page" id="audioPage" role="main" aria-label="Audio player page">
+  <div class="audio-container">
+    <div class="heart-header">🎤 Your Voice 🎤</div>
+    <div class="audio-quote" aria-live="polite">
+      <p style="
+  font-family: 'Georgia', serif;
+  font-size: 1.2rem;
+  color: #b03a5e;
+  background-color: #fff0f5;
+  padding: 15px 20px;
+  border-radius: 12px;
+  max-width: 600px;
+  margin: 20px auto;
+  box-shadow: 0 4px 8px rgba(176, 58, 94, 0.2);
+  line-height: 1.6;
+  text-align: center;
+  font-style: italic;
+">
+  Let the gentle whispers of this audio carry the warmth of my heart straight to yours, echoing our love in every note.
+</p>
+
+    </div>
+    <!--
+      Place your audio file in the same folder as this HTML file,
+      and rename it to "yourvoice.mp3" or change the source below accordingly.
+    -->
+    <audio id="voiceNote" src="jxx/audio1.mp3" controls></audio>
+     
+    </audio>
+    <div class="btn-container">
+      <button class="btn" id="backFromAudio" aria-label="Back to message page">Back</button>
+      <button class="btn" id="nextToVideo" aria-label="Next to video player page">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- Page 3: Video Player Page -->
+<div class="page" id="videoPage" role="main" aria-label="Video player page">
+  <div class="video-container">
+    <div class="heart-header">🎬 Our Moments 🎬</div>
+    <div class="audio-quote" aria-live="polite" style="color:#b84455;">
+      <p style="
+  font-family: 'Georgia', serif;
+  font-size: 1.2rem;
+  color: #b03a5e;
+  background-color: #fff0f5;
+  padding: 15px 20px;
+  border-radius: 12px;
+  max-width: 600px;
+  margin: 20px auto;
+  box-shadow: 0 4px 8px rgba(176, 58, 94, 0.2);
+  line-height: 1.6;
+  text-align: center;
+  font-style: italic;
+">
+  This video holds the moments where our hearts speak louder than words — a timeless reminder of our love’s sweetest embrace.
+</p>
+
+    </div>
+    <!--
+      Place your video file in the same folder as this HTML file,
+      and rename it to "lovemoments.mp4" or change the source below accordingly.
+      The video is muted by default.
+    -->
+    <video id="videoPlayer" controls muted preload="metadata" width="100%" style="max-width:480px; border-radius: 20px;">
+      <source src="jxx/video.mp4" type="video/mp4" />
+      Your browser does not support the video tag.
+    </video>
+    <div class="btn-container">
+      <button class="btn" id="backFromVideo" aria-label="Next to video page">Back</button>
+      <button class="btn" id="nextToPhotos" aria-label="Next to photos page">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- Page 4: Photos Grid Page -->
+<div class="page" id="photosPage" role="main" aria-label="Photos gallery page">
+  <div class="photos-container">
+    <div class="heart-header">📸 The Snapshot Of Us 📸</div>
+    <p style="
+  font-family: 'Georgia', serif;
+  font-size: 1.2rem;
+  color: #b03a5e;
+  background-color: #fff0f5;
+  padding: 15px 20px;
+  border-radius: 12px;
+  max-width: 600px;
+  margin: 20px auto;
+  box-shadow: 0 4px 8px rgba(176, 58, 94, 0.2);
+  line-height: 1.6;
+  text-align: center;
+">
+ “Our pictures tell the story of us — a beautiful journey of love, laughter, and endless memories.”
+</p>
+
+    <div class="photos-grid" tabindex="0" aria-label="Gallery of 10 photos">
+      <img src="jxx/anime1.jpg" alt="Memory photo 1" />
+      <img src="jxx/anime2.jpg" alt="Memory photo 2" />
+      <img src="jxx/anime3.jpg" alt="Memory photo 3" />
+      <img src="jxx/anime4.jpg" alt="Memory photo 4" />
+      <img src="jxx/anime5.jpg" alt="Memory photo 5" />
+      <img src="jxx/anime6.jpg" alt="Memory photo 6" />
+      <img src="jxx/anime7.jpg" alt="Memory photo 7" />
+      <img src="jxx/anime8.jpg" alt="Memory photo 8" />
+      <img src="jxx/anime9.jpg" alt="Memory photo 9" />
+      <img src="jxx/anime10.jpg" alt="Memory photo 10" />
+    </div>
+    <div class="btn-container">
+      <button class="btn" id="backFromPhotos" aria-label="Next to video page">Back</button>
+    <button class="btn" onclick="exitPage()" aria-label="Exit the story">Exit</button>
+
+<script>
+ function exitPage() {
+  // Replace the page content with bear + heart message
+  document.body.innerHTML = `
+    <div style="height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; font-family:sans-serif; background:#fff0f6; color:#d6336c; text-align:center;">
+      <div style="font-size:10rem; animation: wave 2s infinite alternate; transform-origin:70% 70%;">🐻‍❄️</div>
+      <div style="font-size:6rem; margin-top:-2rem; animation: pulse 2s infinite;">❤️</div>
+      <h1>I Wuvv You</h1>
+      <p>SoulSnap.</p>
+      <button onclick="closeTab()" style="margin-top:20px; padding:10px 20px; background:#d6336c; border:none; border-radius:25px; color:#fff; cursor:pointer;">Close Tab</button>
+    </div>
+    <style>
+      @keyframes wave {
+        0% { transform: rotate(0deg); }
+        50% { transform: rotate(15deg); }
+        100% { transform: rotate(0deg); }
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+      }
+    </style>
+  `;
+
+  // Try to close the window after 1 second (optional)
+  setTimeout(() => {
+    window.close();
+  }, 5000);
+}
+
+function closeTab() {
+  window.close();
+  alert("If the tab does not close automatically, please close it manually.");
+}
+
+
+</script>
+
+    </div>
+  </div>
+</div>
+
+<!-- Fullscreen overlay for enlarged photo -->
+<div id="photoOverlay" aria-hidden="true" role="dialog" aria-modal="true" tabindex="-1" style="display:none;">
+  <button id="closeOverlay" aria-label="Close enlarged photo">✖</button>
+  <img id="overlayImg" src="" alt="Enlarged photo" />
+</div>
+
+<style>
+  .photos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .photos-grid img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(214, 51, 108, 0.4);
+    transition: transform 0.3s ease;
+  }
+  .photos-grid img:hover {
+    transform: scale(1.05);
+  }
+
+  /* Overlay styling */
+  #photoOverlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(214, 51, 108, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 9999;
+  }
+  #photoOverlay img {
+    max-width: 90vw;
+    max-height: 80vh;
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    margin-bottom: 20px;
+    object-fit: contain;
+  }
+  #closeOverlay {
+    background: #fff0f5;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    padding: 8px 12px;
+    color: #d6336c;
+    cursor: pointer;
+    box-shadow: 0 0 10px #d6336c;
+    transition: background-color 0.3s ease;
+  }
+  #closeOverlay:hover {
+    background-color: #d6336c;
+    color: white;
+  }
+</style>
+
+<script>
+  const photos = document.querySelectorAll('.photos-grid img');
+  const overlay = document.getElementById('photoOverlay');
+  const overlayImg = document.getElementById('overlayImg');
+  const closeBtn = document.getElementById('closeOverlay');
+
+  photos.forEach(photo => {
+    photo.addEventListener('click', () => {
+      overlayImg.src = photo.src;
+      overlayImg.alt = photo.alt || "Enlarged photo";
+      overlay.style.display = 'flex';
+      overlay.setAttribute('aria-hidden', 'false');
+      closeBtn.focus();
+      document.body.style.overflow = 'hidden'; // Prevent background scroll
+    });
+  });
+
+  closeBtn.addEventListener('click', () => {
+    overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = ''; // Restore scroll
+  });
+
+  // Optional: close overlay with Escape key
+  document.addEventListener('keydown', (e) => {
+    if(e.key === "Escape" && overlay.style.display === 'flex') {
+      closeBtn.click();
+    }
+  });
+</script>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Falling hearts effect
+  const heartsContainer = document.getElementById('hearts');
+
+  function createHeart() {
+    const svgns = "http://www.w3.org/2000/svg";
+    const heart = document.createElementNS(svgns, 'svg');
+    heart.setAttribute('class', 'heart');
+    heart.setAttribute('viewBox', '0 0 32 29.6');
+    heart.style.left = Math.random() * 100 + 'vw';
+    heart.style.animationDuration = (6 + Math.random() * 6) + 's';
+    heart.style.width = (12 + Math.random() * 18) + 'px';
+    heart.style.height = 'auto';
+
+    const path = document.createElementNS(svgns, 'path');
+    path.setAttribute('fill', '#e63946');
+    path.setAttribute('d', 'M23.6,0c-2.6,0-5,1.4-6.6,3.6C15.4,1.4,13,0,10.4,0C5.8,0,2,3.8,2,8.4c0,4.6,4.8,9.8,12.6,16.8c7.8-7,12.6-12.2,12.6-16.8C27.2,3.8,23.6,0,23.6,0z');
+    heart.appendChild(path);
+
+    heartsContainer.appendChild(heart);
+
+    setTimeout(() => {
+      heartsContainer.removeChild(heart);
+    }, 12000);
+  }
+
+  setInterval(createHeart, 400);
+
+  
+
+  // Elements
+  const envelope = document.getElementById('envelope');
+  const label = document.querySelector('.label');
+  const messagePage = document.getElementById('messagePage');
+  const audioPage = document.getElementById('audioPage');
+  const videoPage = document.getElementById('videoPage');
+  const photosPage = document.getElementById('photosPage');
+
+  const backFromMessage = document.getElementById('backFromMessage');
+  const nextToAudio = document.getElementById('nextToAudio');
+  const backFromAudio = document.getElementById('backFromAudio');
+  const nextToVideo = document.getElementById('nextToVideo');
+  const backFromVideo = document.getElementById('backFromVideo');
+  const backFromPhotos = document.getElementById('backFromPhotos');
+
+  const bgMusic = document.getElementById('bgMusic');
+  const audioPlayer = document.getElementById('audioPlayer');
+
+  // Function to fade volume smoothly
+  
+  function fadeVolume(audio, toVolume, duration) {
+  return new Promise((resolve) => {
+    const fromVolume = audio.volume;
+    const steps = 20;
+    const stepTime = duration / steps;
+    const volumeStep = (toVolume - fromVolume) / steps;
+    let currentStep = 0;
+
+    const interval = setInterval(() => {
+      currentStep++;
+      audio.volume = Math.max(0, Math.min(1, audio.volume + volumeStep));
+      if (currentStep >= steps) {
+        clearInterval(interval);
+        resolve();
+      }
+    }, stepTime);
+  });
+}
+
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const bgMusic = document.getElementById("bgMusic");
+    const audioPlayer = document.getElementById("voiceNote");
+
+    bgMusic.volume = 1;
+
+    audioPlayer.addEventListener("play", () => {
+      fadeVolume(bgMusic, 0.03, 1000);
+    });
+
+    audioPlayer.addEventListener("pause", () => {
+      fadeVolume(bgMusic, 1, 1000);
+    });
+
+    audioPlayer.addEventListener("ended", () => {
+      fadeVolume(bgMusic, 1, 1000);
+    });
+  });
+
+
+
+
+  // Envelope click: show message page and start bg music
+  envelope.addEventListener('click', () => {
+    envelope.classList.add('fade-out');
+    label.classList.add('fade-out');
+    setTimeout(() => {
+      envelope.style.display = 'none';
+      label.style.display = 'none';
+      messagePage.classList.add('show');
+      bgMusic.volume = 1;
+      bgMusic.play().catch(() => {});
+    }, 800);
+  });
+  envelope.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      envelope.click();
+    }
+  });
+
+  // Navigation buttons
+  backFromMessage.addEventListener('click', () => {
+    messagePage.classList.remove('show');
+    envelope.style.display = 'block';
+    label.style.display = 'block';
+    envelope.classList.remove('fade-out');
+    label.classList.remove('fade-out');
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+    audioPlayer.pause();
+  });
+
+  nextToAudio.addEventListener('click', () => {
+    messagePage.classList.remove('show');
+    audioPage.classList.add('show');
+    bgMusic.volume = 1;
+  });
+
+  backFromAudio.addEventListener('click', () => {
+    audioPage.classList.remove('show');
+    messagePage.classList.add('show');
+    bgMusic.volume = 1;
+    audioPlayer.pause();
+  });
+
+  nextToVideo.addEventListener('click', () => {
+    audioPage.classList.remove('show');
+    videoPage.classList.add('show');
+    bgMusic.volume = 1;
+  });
+
+  backFromVideo.addEventListener('click', () => {
+    videoPage.classList.remove('show');
+    audioPage.classList.add('show');
+  });
+
+  nextToPhotos.addEventListener('click', () => {
+    videoPage.classList.remove('show');
+    photosPage.classList.add('show');
+  });
+
+  backFromPhotos.addEventListener('click', () => {
+    photosPage.classList.remove('show');
+    videoPage.classList.add('show');
+  });
+  
+
+
+
+  // Fade background music when audio player plays
+  audioPlayer.addEventListener('play', async () => {
+    await fadeVolume(bgMusic, bgMusic.volume, 0.2, 1000);
+  });
+  audioPlayer.addEventListener('pause', async () => {
+    await fadeVolume(bgMusic, bgMusic.volume, 1, 1000);
+  });
+  audioPlayer.addEventListener('ended', async () => {
+    await fadeVolume(bgMusic, bgMusic.volume, 1, 1000);
+  });
+</script>
+
+
+</body>
+</html>
